@@ -9,6 +9,7 @@ jobs:
   build:
     runs-on: macos-latest
     timeout-minutes: 20
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -19,13 +20,15 @@ jobs:
       - name: Generate Xcode project
         run: xcodegen generate
 
-      - name: Build unsigned iPhone app
+      - name: Build iPhone app
         run: |
+          set -euo pipefail
           xcodebuild \
             -project TitanMine.xcodeproj \
             -scheme TitanMine \
             -configuration Release \
             -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
             -derivedDataPath build \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
@@ -33,11 +36,34 @@ jobs:
             DEVELOPMENT_TEAM="" \
             build
 
-      - name: Package IPA for AltStore
+      - name: Validate app bundle
         run: |
+          set -euo pipefail
+          APP="build/Build/Products/Release-iphoneos/TitanMine.app"
+          test -d "$APP"
+          test -x "$APP/TitanMine"
+          plutil -lint "$APP/Info.plist"
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP/Info.plist"
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$APP/Info.plist"
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP/Info.plist"
+
+      - name: Add ad-hoc code signature
+        run: |
+          set -euo pipefail
+          APP="build/Build/Products/Release-iphoneos/TitanMine.app"
+          codesign --force --deep --sign - --timestamp=none "$APP"
+          codesign --verify --deep --strict --verbose=2 "$APP"
+
+      - name: Package standard IPA
+        run: |
+          set -euo pipefail
+          rm -rf Payload TitanMine-AltStore.ipa
           mkdir -p Payload
           cp -R build/Build/Products/Release-iphoneos/TitanMine.app Payload/TitanMine.app
           zip -qry TitanMine-AltStore.ipa Payload
+          unzip -t TitanMine-AltStore.ipa
+          unzip -p TitanMine-AltStore.ipa Payload/TitanMine.app/Info.plist > /tmp/TitanMine-Info.plist
+          plutil -lint /tmp/TitanMine-Info.plist
 
       - name: Upload IPA
         uses: actions/upload-artifact@v4
