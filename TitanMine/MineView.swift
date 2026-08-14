@@ -20,6 +20,8 @@ struct MineView: View {
     @State private var popups: [DamagePopup] = []
     @State private var hitScale: CGFloat = 1
     @State private var flashOpacity: Double = 0
+    @State private var sceneHitToken = 0
+    @State private var sceneCritical = false
 
     var body: some View {
         VStack(spacing: 7) {
@@ -99,7 +101,7 @@ struct MineView: View {
                 RoundedRectangle(cornerRadius: 22, style: .continuous)
                     .fill(Color.black.opacity(0.2))
 
-                VoxelBossScene()
+                Boss3DScene(hitToken: sceneHitToken, criticalHit: sceneCritical)
                     .frame(width: geo.size.width, height: geo.size.height)
                     .scaleEffect(hitScale)
                     .clipped()
@@ -113,7 +115,7 @@ struct MineView: View {
                     )
 
                 LinearGradient(
-                    colors: [.clear, .clear, Color.black.opacity(0.58)],
+                    colors: [.clear, .clear, Color.black.opacity(0.46)],
                     startPoint: .top,
                     endPoint: .bottom
                 )
@@ -288,6 +290,9 @@ struct MineView: View {
 
     private func performTap(at point: CGPoint, size: CGSize) {
         let result = store.tapBoss()
+        sceneCritical = result.critical
+        sceneHitToken &+= 1
+
         UIImpactFeedbackGenerator(style: result.critical ? .heavy : .light).impactOccurred()
         let popup = DamagePopup(
             text: result.critical ? "CRITICAL! -\(result.damage.compactGameNumber)" : "-\(result.damage.compactGameNumber)",
@@ -297,8 +302,8 @@ struct MineView: View {
         )
         withAnimation(.spring(response: 0.16, dampingFraction: 0.58)) {
             popups.append(popup)
-            hitScale = 1.018
-            flashOpacity = result.critical ? 0.22 : 0.10
+            hitScale = result.critical ? 1.030 : 1.015
+            flashOpacity = result.critical ? 0.24 : 0.08
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.10) {
             withAnimation(.easeOut(duration: 0.18)) {
