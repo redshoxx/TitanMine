@@ -1,0 +1,48 @@
+name: Build AltStore IPA
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: macos-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Build unsigned iPhone app
+        run: |
+          xcodebuild \
+            -project TitanMine.xcodeproj \
+            -scheme TitanMine \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            DEVELOPMENT_TEAM="" \
+            build
+
+      - name: Package IPA for AltStore
+        run: |
+          mkdir -p Payload
+          cp -R build/Build/Products/Release-iphoneos/TitanMine.app Payload/TitanMine.app
+          zip -qry TitanMine-AltStore.ipa Payload
+
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: TitanMine-AltStore
+          path: TitanMine-AltStore.ipa
+          if-no-files-found: error
+          retention-days: 30
