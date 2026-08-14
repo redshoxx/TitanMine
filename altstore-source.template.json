@@ -1,0 +1,24 @@
+{
+  "name": "Titan Mine Source",
+  "identifier": "com.wolfi.titanmine.source",
+  "sourceURL": "https://YOUR-DOMAIN.example/titanmine/source.json",
+  "apps": [
+    {
+      "name": "Titan Mine",
+      "bundleIdentifier": "com.wolfi.titanmine",
+      "developerName": "Wolfi",
+      "subtitle": "Idle mining, boss fights and loot",
+      "localizedDescription": "Mine, upgrade, defeat Titans, open chests and build your mining power.",
+      "iconURL": "https://YOUR-DOMAIN.example/titanmine/icon.png",
+      "tintColor": "147FEA",
+      "versions": [
+        {
+          "version": "1.0.0",
+          "date": "2026-08-14",
+          "downloadURL": "https://YOUR-DOMAIN.example/titanmine/TitanMine-AltStore.ipa",
+          "size": 0
+        }
+      ]
+    }
+  ]
+}
